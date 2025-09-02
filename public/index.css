@@ -45,6 +45,7 @@
 }
 
 .window {
+    position: relative;
     margin: 0.25em;
     background: blue;
 }

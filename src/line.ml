@@ -53,11 +53,6 @@ module LineData = struct
     |> Option.andThen Js.Json.decodeString
     |> Option.map (fun content -> { content = content })
 
-  let deposit_lines first_line line_array self =
-    { self with
-      map = LineNumberMap.update first_line (fun _ -> Some line_array) self.map
-    }
-
   let have_blocks self =
     LineNumberMap.bindings self.map
     |> List.map (fun (k, v) -> k)

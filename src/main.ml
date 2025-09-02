@@ -13,7 +13,7 @@ let init _jsdata =
   (empty, Tea.Cmd.none)
 
 let new_window model =
-  let spec = { x = 10 ; y = 10 ; width = 120 ; height = 50 ; title = "test window" } in
+  let spec = { x = 10 ; y = 10 ; width = 500 ; height = 300 ; title = "test window" } in
   let the_new_window =
     { spec = spec ;
       start_ptr = 0 ;
@@ -23,6 +23,7 @@ let new_window model =
   ({ model with windows = the_new_window :: model.windows }, Some the_new_window)
 
 let take_blocks bs model =
+  let model = { model with line_data = LineData.new_blocks bs model.line_data } in
   (model, None)
 
 let update_window model msg =

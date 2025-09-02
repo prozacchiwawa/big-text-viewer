@@ -8,16 +8,15 @@ end
 module ArraySequence(T : ArrayElt) = struct
   type c = T.t array
   type e = T.t
-  type t = (int * int * T.t array)
+  type t = (bool * int * int * T.t array)
 
-  let start a = (0, 0, a)
-  let circular a n = (n, n, a)
-  let next (s, n, a) =
-    let next_n = (n + 1) mod (Array.length a) in
-    if next_n == s then
+  let circular a n = (false, (n + (Array.length a) - 1) mod (Array.length a), n, a)
+  let start a = circular a 0
+  let next (started, s, n, a) =
+    if Array.length a == 0 || (started && n == s) then
       None
     else
-      Some (Array.get a n, (s, n + 1, a))
+      Some (Array.get a n, (true, s, (n + 1) mod (Array.length a), a))
 end
 
 module ArrayExtra = struct
