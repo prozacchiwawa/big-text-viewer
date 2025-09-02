@@ -1,0 +1,13 @@
+{
+  "name": "shownote",
+  "scripts": {
+    "build": "./node_modules/.bin/rescript build",
+    "bundle": "./node_modules/.bin/esbuild ./src/index.js --bundle --outfile=public/index.js"
+  },
+  "dependencies": {
+    "@rescript/core": "0.7.0",
+    "esbuild": "^0.25.9",
+    "rescript": "^10.1.4",
+    "rescript-tea": "^0.16.0"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "shownote",
+  "sources": ["src"],
+  "bs-dependencies": [
+      "@rescript/core",
+      "rescript-tea",
+      "rescript-webapi"
+  ]
+}
