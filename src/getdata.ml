@@ -19,9 +19,21 @@ module GetLineData = struct
     Webapi.Fetch.fetch ("/lines?low=" ^ (string_of_int l.low) ^ "&high=" ^ (string_of_int l.high))
     |> Js.Promise.then_ (Webapi.Fetch.Response.json)
     |> PromiseExtra.map (ArrayExtra.decodeJson LineData.decode_info)
-    |> PromiseExtra.map (Option.map (fun block -> { LineData.number = line_in ; lines = block }))
+    |> PromiseExtra.map (Option.map (fun block -> { LineData.number = l ; lines = block }))
 
-  let compute_retrieval line_data shown_line_numbers: LineData.block_report array Js.Promise.t =
+  let page_up_track (track : string) (depth : int) (l : LineNumber.t) =
+    Webapi.Fetch.fetch ("/prev_page?low=" ^ (string_of_int l.low) ^ "&high=" ^ (string_of_int l.high) ^ "&track=" ^ track ^ "&depth=" ^ (string_of_int depth))
+    |> Js.Promise.then_ (Webapi.Fetch.Response.json)
+    |> PromiseExtra.map (ArrayExtra.decodeJson LineNumber.decode)
+    |> PromiseExtra.map (Option.map (fun arr -> (l, arr)))
+
+  let page_down_track (track : string) (depth : int) (l : LineNumber.t) =
+    Webapi.Fetch.fetch ("/track?low=" ^ (string_of_int l.low) ^ "&high=" ^ (string_of_int l.high) ^ "&track=" ^ track ^ "&depth=" ^ (string_of_int depth))
+    |> Js.Promise.then_ (Webapi.Fetch.Response.json)
+    |> PromiseExtra.map (ArrayExtra.decodeJson LineNumber.decode)
+    |> PromiseExtra.map (Option.map (fun arr -> (l, arr)))
+
+  let compute_retrieval line_data shown_line_numbers: LineData.block_report array Js.Promise.t option =
     let want_lines = LineNumberArraySeq.start shown_line_numbers in
     let want_lines_block = LineNumberMapSeq.map LineNumber.line_block want_lines in
     let want_lines_set = LineNumberSetArrExtra.from_seq want_lines_block in
@@ -29,10 +41,17 @@ module GetLineData = struct
     let have_lines_seq = LineNumberListSeq.start have_lines_list in
     let have_lines_set = LineNumberSetListExtra.from_seq have_lines_seq in
     let want_blocks = LineNumberSet.diff want_lines_set have_lines_set in
-    want_blocks
-    |> LineNumberSet.elements
-    |> List.map getlines
-    |> Array.of_list
-    |> Js.Promise.all
-    |> PromiseExtra.map ArrayExtra.remove_opt
+    let line_numbers_array =
+      want_blocks
+      |> LineNumberSet.elements
+      |> List.map getlines
+      |> Array.of_list
+    in
+    if Array.length line_numbers_array == 0 then
+      None
+    else
+      line_numbers_array
+      |> Js.Promise.all
+      |> PromiseExtra.map ArrayExtra.remove_opt
+      |> fun p -> Some p
 end

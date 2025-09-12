@@ -5,4 +5,10 @@
     <body>
         <div id="root"></div>
         <script src="./index.js"></script>
+        <script>
+         window.addEventListener('keydown', (evt) => {
+             const kd = new KeyboardEvent("keydown", { key: evt.key });
+             document.getElementById('root-inner').dispatchEvent(kd);
+         });
+        </script>
     </body>

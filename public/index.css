@@ -1,5 +1,21 @@
 * { padding: 0; margin: 0 }
 
+@font-face {
+    font-family: 'plex';
+    src: url('./IBMPlexMono-Medium.ttf');
+}
+
+body {
+    font-family: 'plex';
+    font-size: 15px;
+}
+
+.hidden-input {
+    height: 0px;
+    width: 0px;
+    opacity: 0%;
+}
+
 .root {
     display: flex;
     flex-direction: column;
@@ -42,6 +58,8 @@
 }
 
 .window-list-elt {
+    overflow: hidden;
+    height: 22px;
 }
 
 .window {

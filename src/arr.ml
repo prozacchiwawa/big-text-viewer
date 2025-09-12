@@ -10,13 +10,19 @@ module ArraySequence(T : ArrayElt) = struct
   type e = T.t
   type t = (bool * int * int * T.t array)
 
-  let circular a n = (false, (n + (Array.length a) - 1) mod (Array.length a), n, a)
+  let circular a n =
+    if Array.length a == 0 then
+      (true, 0, 0, a)
+    else
+      (false, n, n, a)
   let start a = circular a 0
   let next (started, s, n, a) =
-    if Array.length a == 0 || (started && n == s) then
+    let alen = Array.length a in
+    let next = (n + 1) mod alen in
+    if started && next == s then
       None
     else
-      Some (Array.get a n, (true, s, (n + 1) mod (Array.length a), a))
+      Some (Array.get a n, (true, s, next, a))
 end
 
 module ArrayExtra = struct

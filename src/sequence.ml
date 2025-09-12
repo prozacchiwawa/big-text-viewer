@@ -28,8 +28,8 @@ module Make(T: SeqT) = struct
   type t = T.t
 
   let to_list seq =
-    let rec to_list_inner lst seq =
-      match T.next seq with
+    let rec to_list_inner lst seq1 =
+      match T.next seq1 with
       | None -> List.rev lst
       | Some (e, s) -> to_list_inner (e :: lst) s
     in
