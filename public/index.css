@@ -60,10 +60,28 @@ body {
 .window-list-elt {
     overflow: hidden;
     height: 22px;
+    display: flex;
+    flex-direction: row;
 }
 
 .window {
     position: relative;
     margin: 0.25em;
     background: blue;
+}
+
+.title-input {
+    margin-left: 0.25em;
+}
+
+.window-list-lineno {
+    width: 6em;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.window-list-content {
+    width: 100%;
+    flex-grow: 1;
+    flex-shrink: 1;
 }

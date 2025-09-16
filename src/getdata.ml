@@ -21,6 +21,12 @@ module GetLineData = struct
     |> PromiseExtra.map (ArrayExtra.decodeJson LineData.decode_info)
     |> PromiseExtra.map (Option.map (fun block -> { LineData.number = l ; lines = block }))
 
+  let track (track : string) (depth : int) (l : LineNumber.t) =
+    Webapi.Fetch.fetch ("/track?low=" ^ (string_of_int l.low) ^ "&high=" ^ (string_of_int l.high) ^ "&track=" ^ track ^ "&depth=" ^ (string_of_int depth))
+    |> Js.Promise.then_ (Webapi.Fetch.Response.json)
+    |> PromiseExtra.map (ArrayExtra.decodeJson LineNumber.decode)
+    |> PromiseExtra.map (Option.map (fun arr -> (l, arr)))
+
   let page_up_track (track : string) (depth : int) (l : LineNumber.t) =
     Webapi.Fetch.fetch ("/prev_page?low=" ^ (string_of_int l.low) ^ "&high=" ^ (string_of_int l.high) ^ "&track=" ^ track ^ "&depth=" ^ (string_of_int depth))
     |> Js.Promise.then_ (Webapi.Fetch.Response.json)

@@ -12,7 +12,7 @@ type msg
   | ArrowRight
   | PageUp
   | PageDown
-  | DisplayLines of (LineNumber.t * (LineNumber.t array))
+  | DisplayLines of (bool * (LineNumber.t * (LineNumber.t array)))
   | CycleWindows
   | MoreDepth
   | LessDepth

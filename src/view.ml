@@ -26,7 +26,6 @@ type display_window =
     track: string ;
     edit_line_number: string ;
     depth: int ;
-    start_ptr: int ;
     shown_line_numbers: LineNumber.t array
   }
 
@@ -69,9 +68,11 @@ let set_line l =
   SetLine (LineNumber.from_string l)
 
 let view_window d w =
-  let line_seq = LineArraySequence.circular w.shown_line_numbers w.start_ptr in
+  let _ = Js.log "window first line" in
+  let _ = Js.log (LineNumber.to_string (Array.get w.shown_line_numbers 0)) in
+  let line_seq = LineArraySequence.circular w.shown_line_numbers 0 in
   let first_line =
-    LineNumber.to_string (Array.get w.shown_line_numbers w.start_ptr)
+    LineNumber.to_string (Array.get w.shown_line_numbers 0)
   in
   let div_seq =
     line_seq
@@ -83,7 +84,15 @@ let view_window d w =
              let _ = Js.log "show line" in
              let _ = Js.log ln in
              let _ = Js.log l in
-             div [classList [("window-list-elt", true)]] [text (LineNumber.to_string ln) ; text l.LineData.content]
+             div
+               [classList [("window-list-elt", true)]]
+               [ div
+                   [classList [("window-list-lineno", true)]]
+                   [text (LineNumber.to_string ln)] ;
+                 div
+                   [classList [("window-list-content", true)]]
+                   [text l.LineData.content]
+               ]
             )
          |> Option.orElse (fun () -> div [classList [("window-list-elt", true)]] [text "<missing>"])
       )
@@ -91,7 +100,7 @@ let view_window d w =
   let div_list: msg Vdom.t list = LineListSequence.to_list div_seq in
   div [styles (window_styles w) ; classList [("window", true)]]
   [
-    div [classList [("window-title", true)]] [text "title - "; input' [value first_line ; onChange set_line] []] ;
+    div [classList [("window-title", true)]] [text "title - (depth "; text (string_of_int w.depth) ; text ")" ; text " - line" ; input' [classList [("title-input", true)] ; value first_line ; onChange set_line] []] ;
     div
       [classList [("window-body", true)]]
       [
@@ -135,36 +144,28 @@ let view model =
 
 let window_depth_adj n w = { w with depth = w.depth + n }
 
-let window_line_up model w =
-  let alen = Array.length w.shown_line_numbers in
-  let next_line_number = (w.start_ptr + alen - 1) mod alen in
-  let to_replace = Array.get w.shown_line_numbers w.start_ptr in
-  let updated_line_numbers =
-    Array.init
-      alen
-      (fun i ->
-        if i == next_line_number then
-          LineNumber.sub to_replace w.spec.height
-        else
-          to_replace
-      )
-  in
-  { w with start_ptr = next_line_number ; shown_line_numbers = updated_line_numbers }
-
 let window_set_line w ln =
   let alen = Array.length w.shown_line_numbers in
-  { w with start_ptr = 0 ; edit_line_number = (LineNumber.to_string ln) ; shown_line_numbers = Array.init alen (fun i -> LineNumber.add ln i) }
+  { w with
+    edit_line_number = (LineNumber.to_string ln) ;
+    shown_line_numbers = Array.init alen (fun i -> LineNumber.add ln i)
+  }
 
-let window_first_line w = Array.get w.shown_line_numbers w.start_ptr
+let window_first_line w = Array.get w.shown_line_numbers 0
 
 let window_last_line w =
   let alen = Array.length w.shown_line_numbers in
-  let last_ptr = (w.start_ptr + (alen - 1)) mod alen in
+  let last_ptr = (w.spec.height - 1) mod alen in
   Array.get w.shown_line_numbers last_ptr
 
-let window_set_lines w ln (lines : LineNumber.t array) =
+let window_set_lines at_end w ln (lines : LineNumber.t array) =
   let line_len = Array.length lines in
-  let from_line_number = Pervasives.max 0 (line_len - w.spec.height) in
+  let from_line_number =
+    if at_end then
+      Pervasives.max 0 (line_len - w.spec.height)
+    else
+      0
+  in
   let show_lines =
       Array.init
         w.spec.height
@@ -178,26 +179,10 @@ let window_set_lines w ln (lines : LineNumber.t array) =
   in
   let _ = Js.log "show lines" in
   let _ = Js.log show_lines in
-  { w with shown_line_numbers = show_lines ; start_ptr = 0 }
-
-let window_line_down model w =
-  let alen = Array.length w.shown_line_numbers in
-  let next_line_number = (w.start_ptr + 1) mod alen in
-  let to_replace = Array.get w.shown_line_numbers w.start_ptr in
-  let updated_line_numbers =
-    Array.init
-      alen
-      (fun i ->
-        if i == next_line_number then
-          LineNumber.sub to_replace w.spec.height
-        else
-          to_replace
-      )
-  in
-  { w with start_ptr = next_line_number ; shown_line_numbers = updated_line_numbers }
+  { w with shown_line_numbers = show_lines }
 
 let window_page_down model w =
   let alen = Array.length w.shown_line_numbers in
-  let min_line = Array.get w.shown_line_numbers w.start_ptr in
+  let min_line = Array.get w.shown_line_numbers 0 in
   let next_page = LineNumber.add min_line w.spec.height in
-  { w with start_ptr = 0 ; shown_line_numbers = Array.init alen (fun i -> LineNumber.add next_page i) }
+  { w with shown_line_numbers = Array.init alen (fun i -> LineNumber.add next_page i) }

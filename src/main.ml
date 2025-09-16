@@ -45,7 +45,6 @@ let new_window model =
   let the_new_window =
     { spec = spec ;
       track = "main" ;
-      start_ptr = 0 ;
       depth = 0 ;
       edit_line_number = "0" ;
       shown_line_numbers = Array.init height (fun i -> { LineNumber.low = i ; LineNumber.high = 0 })
@@ -53,30 +52,36 @@ let new_window model =
   in
   focus model the_new_window
 
-let page_up model =
-  model |> with_focus
-    (fun w ->
-       let next_line = window_first_line w in
-       ModelAndCmd (
-         model,
-         GetLineData.page_up_track w.track w.depth next_line
-         |> (fun prom -> Tea_promise.cmd prom (Option.map (fun p -> DisplayLines p)))
-       )
-     )
-
-let redisplay_line f model =
+let redisplay_line at_end retrieve f model =
   model |> with_focus
     (fun w ->
        let (next_line, w) = f model w in
        ModelAndCmd (
          { model with focus = Some w },
-         GetLineData.page_down_track w.track w.depth next_line
-         |> (fun prom -> Tea_promise.cmd prom (Option.map (fun p -> DisplayLines p)))
+         (retrieve model w)
+         |> (fun prom -> Tea_promise.cmd prom (Option.map (fun p -> DisplayLines (at_end, p))))
        )
+    )
+
+let page_up model =
+  model |> redisplay_line
+    true
+    (fun model w ->
+      let next_line = window_first_line w in
+      GetLineData.page_up_track w.track w.depth next_line
+    )
+    (fun model w ->
+      let next_line = window_first_line w in
+      (next_line, w)
     )
 
 let page_down model =
   model |> redisplay_line
+    false
+    (fun model w ->
+       let next_line = LineNumber.add (window_last_line w) 1 in
+       GetLineData.page_down_track w.track w.depth next_line
+    )
     (fun model w ->
        let next_line = LineNumber.add (window_last_line w) 1 in
        (next_line, w)
@@ -84,10 +89,17 @@ let page_down model =
 
 let set_line model ln =
   model |> redisplay_line
+    false
+    (fun model w -> GetLineData.track w.track w.depth ln)
     (fun model w -> (ln, w))
 
 let depth_adj n model =
   model |> redisplay_line
+    false
+    (fun model w ->
+      let first_line = window_first_line w in
+      GetLineData.page_down_track w.track w.depth first_line
+    )
     (fun model w ->
       let first_line = window_first_line w in
       let new_w = window_depth_adj n w in
@@ -107,9 +119,9 @@ let take_blocks bs model =
   let model = { model with line_data = LineData.new_blocks bs model.line_data ; retrieving = false } in
   JustModel model
 
-let set_display model ln lines =
+let set_display at_end model ln lines =
   model.focus
-  |> Option.map (fun w -> { model with focus = Some (window_set_lines w ln lines) })
+  |> Option.map (fun w -> { model with focus = Some (window_set_lines at_end w ln lines) })
   |> Option.orElse (fun () -> model)
 
 let update_window model msg: updateResult =
@@ -129,7 +141,7 @@ let update_window model msg: updateResult =
   | SetLine n -> set_line model n
   | MoreDepth -> depth_adj 1 model
   | LessDepth -> depth_adj (-1) model
-  | DisplayLines (l, lines) -> JustModel (set_display model l lines)
+  | DisplayLines (at_end, (l, lines)) -> JustModel (set_display at_end model l lines)
 
 let update model _msg =
   let (updated, cmd) =
