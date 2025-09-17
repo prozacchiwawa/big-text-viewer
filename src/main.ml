@@ -41,7 +41,7 @@ let cycle_windows model =
 
 let new_window model =
   let height = 25 in
-  let spec = { x = 10 ; y = 10 ; width = 120 ; height = height ; title = "test window" ; z_index = None } in
+  let spec = { x = 10 ; y = 10 ; width = 120 ; height = height ; z_index = None } in
   let the_new_window =
     { spec = spec ;
       track = "main" ;
@@ -93,6 +93,18 @@ let set_line model ln =
     (fun model w -> GetLineData.track w.track w.depth ln)
     (fun model w -> (ln, w))
 
+let set_track model t =
+  model |> redisplay_line
+    false
+    (fun model w ->
+      let ln = window_first_line w in
+      GetLineData.track t w.depth ln
+    )
+    (fun model w ->
+      let ln = window_first_line w in
+      (ln, { w with track = t })
+    )
+
 let depth_adj n model =
   model |> redisplay_line
     false
@@ -142,6 +154,7 @@ let update_window model msg: updateResult =
   | MoreDepth -> depth_adj 1 model
   | LessDepth -> depth_adj (-1) model
   | DisplayLines (at_end, (l, lines)) -> JustModel (set_display at_end model l lines)
+  | SetTrack t -> set_track model t
 
 let update model _msg =
   let (updated, cmd) =

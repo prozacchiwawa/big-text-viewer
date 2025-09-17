@@ -16,7 +16,6 @@ type window_spec =
     y: int ;
     width: int ;
     height: int ;
-    title : string ;
     z_index : int option
   }
 
@@ -64,8 +63,9 @@ module LineArraySequence = ArraySequence(struct type t = LineNumber.t end)
 module LineToDivSequence = Sequence.Map(LineArraySequence)(struct type t = msg Vdom.t end)
 module LineListSequence = Sequence.Make(LineToDivSequence)
 
-let set_line l =
-  SetLine (LineNumber.from_string l)
+let set_line l = SetLine (LineNumber.from_string l)
+
+let set_track l = SetTrack l
 
 let view_window d w =
   let _ = Js.log "window first line" in
@@ -100,7 +100,7 @@ let view_window d w =
   let div_list: msg Vdom.t list = LineListSequence.to_list div_seq in
   div [styles (window_styles w) ; classList [("window", true)]]
   [
-    div [classList [("window-title", true)]] [text "title - (depth "; text (string_of_int w.depth) ; text ")" ; text " - line" ; input' [classList [("title-input", true)] ; value first_line ; onChange set_line] []] ;
+    div [classList [("window-title", true)]] [input' [classList [("track-input", true)] ; value w.track ; onChange set_track] [] ; text " - (depth "; text (string_of_int w.depth) ; text ")" ; text " - line" ; input' [classList [("title-input", true)] ; value first_line ; onChange set_line] []] ;
     div
       [classList [("window-body", true)]]
       [

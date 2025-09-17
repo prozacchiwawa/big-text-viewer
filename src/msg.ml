@@ -17,3 +17,4 @@ type msg
   | MoreDepth
   | LessDepth
   | SetLine of LineNumber.t
+  | SetTrack of string
